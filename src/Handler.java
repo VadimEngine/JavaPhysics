@@ -1,0 +1,183 @@
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.util.ArrayList;
+
+public class Handler implements MouseMotionListener, MouseListener{
+
+	private ArrayList<Particle> particles = new ArrayList<>();
+
+	private ParticleView pv;
+
+	private int timer = 0;
+	private boolean isPaused;
+
+	private int vectorXa;
+	private int vectorYa;
+
+	private int vectorXb;
+	private int vectorYb;
+	private boolean isVector;
+	private boolean isGravity = true;
+
+	public Handler() {
+		pv = new ParticleView(710, 0, 710, 300, particles, this);
+	}
+
+	public void tick() {
+		if (!isPaused) {
+			timer++;
+			for (int i = 0; i < particles.size(); i++) {
+				Particle p1 = particles.get(i);
+			
+				if (isGravity) {
+					p1.forceAct(270.0, 9.81 * p1.getMass());
+				}
+				for (int j = 0; j < particles.size(); j++) {
+					Particle p2 = particles.get(j);
+					if (j != i) {
+						if (colliding(p1,p2)) {
+							p1.collide(p2);
+						}
+					}
+				}
+				p1.tick();
+			}
+		}
+		pv.tick();
+	}
+
+	public void render(Graphics g) {
+
+		for (int i = 0; i < particles.size(); i++) {
+			particles.get(i).render(g);
+		}
+		pv.render(g);
+
+		g.setColor(Color.BLACK);
+		if (isVector) {
+			//draw arrow part of vector
+			g.drawLine(vectorXa, vectorYa, 
+					(int)(vectorXb - 2 * xVector(vectorXa, vectorXb)),
+					(int)(vectorYb - 2 * yVector(vectorYa, vectorYb)));			
+		}
+
+		pv.rendertime(g, timer);
+		pv.renderGravity(g, isGravity);
+	}
+
+	private boolean colliding(double x1, double y1, double width1, double x2, double y2, double width2) {
+		if ((x2 > x1 - width2 && x2 < x1 + width1) && (y2 > y1 - width2 && y2 < y1 + width1)) {
+			return true;
+		}
+
+		if ((x1 > x2 - width1 && x1 < x2 + width2) && (y1 > y2 - width1 && y1 < y2 + width2)) {
+			return true;
+		}
+
+		return false;	
+	}
+
+	private boolean colliding (Particle p1, Particle p2) {
+		return colliding(p1.getX(), p1.getY(), p1.getWidth(), p2.getX(), p2.getY(), p2.getWidth());	
+	}
+
+	private double distance(double x1, double y1, double x2, double y2) {
+		return Math.sqrt(Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2));
+	}
+
+
+	private double xVector(double x1, double x2) {
+		return (x2 - x1);
+	}
+
+	private double yVector(double y1, double y2) {
+		return (y2 - y1);
+	}
+
+	private double angle(double x1, double y1, double x2, double y2) {
+
+		if (-xVector(vectorXa, vectorXb) > 0) {
+			return (180 / Math.PI) * Math.atan(yVector(vectorYa, vectorYb) / -xVector(vectorXa, vectorXb));
+		} else {
+			return (180 / Math.PI) * Math.atan(yVector(vectorYa, vectorYb) / -xVector(vectorXa, vectorXb)) + 180;
+		}
+
+	}
+
+	public void pauseAction() {
+		isPaused = !isPaused;
+	}
+
+	public boolean isPaused() {
+		return isPaused;
+	}
+
+	public void toggleGravity() {
+		isGravity = !isGravity;
+	}
+
+	public boolean isGravity() {
+		return isGravity;
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent e) {}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		if (e.getButton() == 1 && e.getX() < 700) {
+			isVector = true;
+			vectorXa = e.getX();
+			vectorYa = e.getY();
+			vectorXb = e.getX();
+			vectorYb = e.getY();
+		} else if (e.getButton() == 3) {
+			for (int i = 0; i < particles.size(); i++) {
+				Particle p = particles.get(i);
+				if (colliding(p.getX(), p.getY(), p.getWidth(), e.getX(), e.getY(), 0)) {
+					for (int j = 0; j < particles.size(); j++) {
+						particles.get(j).unSelect();
+					}
+					p.select();
+				}
+			}
+		} else if (e.getButton() == 1 && e.getX() >= 700) {
+			pv.click(e.getX(), e.getY());
+		}
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		if (e.getButton() == 1 && isVector) {
+			Particle p = new Particle(vectorXa, vectorYa);
+
+			double angle = angle(vectorXa, vectorYa, vectorXb, vectorYb);
+			if (Double.isNaN(angle)) {
+				angle = 0;
+			}
+			double force = distance(vectorXa, vectorYa, vectorXb, vectorYb);
+			p.forceAct(angle, force);
+			particles.add(p);
+			isVector = false;
+		}
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {}
+
+	@Override
+	public void mouseExited(MouseEvent e) {}
+
+	@Override
+	public void mouseDragged(MouseEvent e) {
+		vectorXb = e.getX();
+		vectorYb = e.getY();
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent e) {}
+
+}
