@@ -4,10 +4,19 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
+import java.util.List;
 
-public class Handler implements MouseMotionListener, MouseListener{
+/**
+ * Handler Class that holds the particles and updates them. Also manages mouse inputs and the ParticleView HUD for user
+ * input
+ * 
+ *  Might be better to do calculations in radiant and display values in degrees or radiant depending on a toggle
+ * @author Vadim
+ *
+ */
+public class Handler implements MouseMotionListener, MouseListener {
 
-	private ArrayList<Particle> particles = new ArrayList<>();
+	private List<Particle> particles = new ArrayList<>();
 
 	private ParticleView pv;
 
@@ -16,16 +25,23 @@ public class Handler implements MouseMotionListener, MouseListener{
 
 	private int vectorXa;
 	private int vectorYa;
-
 	private int vectorXb;
 	private int vectorYb;
+	
 	private boolean isVector;
 	private boolean isGravity = true;
 
+	/**
+	 * Handler constructor that initializes the ParticleView HUD
+	 */
 	public Handler() {
 		pv = new ParticleView(710, 0, 710, 300, particles, this);
 	}
 
+	/**
+	 * Updates all particles if not paused and also collides all particles if they are overlapping. Also updates the
+	 * ParticleView HUD.
+	 */
 	public void tick() {
 		if (!isPaused) {
 			timer++;
@@ -49,8 +65,11 @@ public class Handler implements MouseMotionListener, MouseListener{
 		pv.tick();
 	}
 
+	/**
+	 * Renders all particles, the ParticleView HUD, the velocity vector for new particles and the timer.
+	 * @param g
+	 */
 	public void render(Graphics g) {
-
 		for (int i = 0; i < particles.size(); i++) {
 			particles.get(i).render(g);
 		}
@@ -68,7 +87,40 @@ public class Handler implements MouseMotionListener, MouseListener{
 		pv.renderGravity(g, isGravity);
 	}
 
-	private boolean colliding(double x1, double y1, double width1, double x2, double y2, double width2) {
+	//Static methods----------------------------------------------------------------------------------------------------
+
+	/**
+	 * Return the angle in degrees between 2 points
+	 * 
+	 * Could be improved by taking in 2 Point objects instead. Find slope and convert to angle.
+	 * @param x1 X coordinate of the first point
+	 * @param y1 Y coordinate of the first point
+	 * @param x2 X coordinate of the second point
+	 * @param y2 Y coordinate of the second point
+	 * @return the Angle formed by the 2 points.
+	 */
+	private static double angle(double x1, double y1, double x2, double y2) {
+
+		if (-xVector(x1, x2) > 0) {
+			return (180 / Math.PI) * Math.atan(yVector(y1, y2) / -xVector(x1, x2));
+		} else {
+			return (180 / Math.PI) * Math.atan(yVector(y1, y2) / -xVector(x1, x2)) + 180;
+		}
+
+	}
+	
+	/**
+	 * Return true the 2 circles overlap 
+	 * 
+	 * @param x1 Top left x coordinate of first circle
+	 * @param y1 Top left y coordinate of first circle
+	 * @param width1 Diameter of the first coordinate
+	 * @param x2 Top left x coordinate of second circle
+	 * @param y2 Top left y coordinate of second circle
+	 * @param width2 Diameter of the second coordinate
+	 * @return if two circles overlap
+	 */
+	private static boolean colliding(double x1, double y1, double width1, double x2, double y2, double width2) {
 		if ((x2 > x1 - width2 && x2 < x1 + width1) && (y2 > y1 - width2 && y2 < y1 + width1)) {
 			return true;
 		}
@@ -80,32 +132,52 @@ public class Handler implements MouseMotionListener, MouseListener{
 		return false;	
 	}
 
-	private boolean colliding (Particle p1, Particle p2) {
+	/**
+	 * Returns true if the two particles overlap.
+	 * 
+	 * @param p1 First particle
+	 * @param p2 Second particle
+	 * @return if the two particles overlap
+	 */
+	private static boolean colliding (Particle p1, Particle p2) {
 		return colliding(p1.getX(), p1.getY(), p1.getWidth(), p2.getX(), p2.getY(), p2.getWidth());	
 	}
 
-	private double distance(double x1, double y1, double x2, double y2) {
+	/**
+	 * Returns the distance between two points
+	 * @param x1 x coordinate of the first point
+	 * @param y1 y coordinate of the first point
+	 * @param x2 x coordinate of the second point
+	 * @param y2 y coordinate of the second point
+	 * @return The distance between two points
+	 */
+	private static double distance(double x1, double y1, double x2, double y2) {
 		return Math.sqrt(Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2));
 	}
 
-
-	private double xVector(double x1, double x2) {
+	/**
+	 * Returns the x component between two points
+	 * @param x1 x coordinate of first point
+	 * @param x2 x coordinate of second point
+	 * @return X component between two points
+	 */
+	private static double xVector(double x1, double x2) {
 		return (x2 - x1);
 	}
 
-	private double yVector(double y1, double y2) {
+	/**
+	 * Returns the y component between two points
+	 * @param y1 y coordinate of first point
+	 * @param y2 y coordinate of second point
+	 * @return Y component between two points
+	 */
+	private static double yVector(double y1, double y2) {
 		return (y2 - y1);
 	}
 
-	private double angle(double x1, double y1, double x2, double y2) {
-
-		if (-xVector(vectorXa, vectorXb) > 0) {
-			return (180 / Math.PI) * Math.atan(yVector(vectorYa, vectorYb) / -xVector(vectorXa, vectorXb));
-		} else {
-			return (180 / Math.PI) * Math.atan(yVector(vectorYa, vectorYb) / -xVector(vectorXa, vectorXb)) + 180;
-		}
-
-	}
+	//End of Static methods---------------------------------------------------------------------------------------------
+	
+	//Getters and Setters-----------------------------------------------------------------------------------------------
 
 	public void pauseAction() {
 		isPaused = !isPaused;
@@ -122,7 +194,11 @@ public class Handler implements MouseMotionListener, MouseListener{
 	public boolean isGravity() {
 		return isGravity;
 	}
+	
+	//End of Getters and Setters----------------------------------------------------------------------------------------
 
+	//MouseMotionListener, MouseListener methods------------------------------------------------------------------------
+	
 	@Override
 	public void mouseClicked(MouseEvent e) {}
 
@@ -179,5 +255,5 @@ public class Handler implements MouseMotionListener, MouseListener{
 
 	@Override
 	public void mouseMoved(MouseEvent e) {}
-
+	//End of MouseMotionListener, MouseListener methods-----------------------------------------------------------------
 }

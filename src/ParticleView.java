@@ -1,11 +1,20 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JColorChooser;
 import javax.swing.JOptionPane;
 
+/**
+ * HUD for the application, allows setting/viewing values for a selected particle, pausing the application,
+ * toggling gravity, and selecting next/previous particles 
+ * 
+ * Could improve by having a selectedParicle field as well as index instead of iterating the particles to find
+ * the selected particle
+ * @author Vadim
+ *
+ */
 public class ParticleView {
 
 	private int x;
@@ -13,14 +22,23 @@ public class ParticleView {
 	private int height;
 	private int width;
 
-	private ArrayList<Particle> p;
+	private List<Particle> p;
 	private Particle selectedP = null;
 
 	private Handler handler;
 
 	private static DecimalFormat df = new DecimalFormat("#.00"); 
 
-	public ParticleView(int x, int y, int height, int width, ArrayList<Particle> p, Handler handler) {
+	/**
+	 * Constructor that initializes the dimensions and related fields.
+	 * @param x Top left x position of the HUD 
+	 * @param y Top left y position of the HUD
+	 * @param height Height of the HUD
+	 * @param width Width of the HUD
+	 * @param p The environment particles
+	 * @param handler The handler
+	 */
+	public ParticleView(int x, int y, int height, int width, List<Particle> p, Handler handler) {
 		this.x = x;
 		this.y = y;
 		this.height = height;
@@ -29,15 +47,23 @@ public class ParticleView {
 		this.handler = handler;
 	}
 
+	/**
+	 * Sets the selected particle which has its information displayed and allow for editing
+	 */
 	public void tick() {
 		for (int i = 0; i < p.size(); i++) {
 			if (p.get(i).isSelected()) {
 				selectedP = p.get(i);
+				break;
 			}
 		}
 
 	}
 
+	/**
+	 * Renders the HUD and particle information and buttons for editing.
+	 * @param g
+	 */
 	public void render(Graphics g) {
 		g.setColor(Color.GRAY);
 		g.fillRect(x, y, width, height);
@@ -57,6 +83,16 @@ public class ParticleView {
 		}
 	}
 
+	/**
+	 * Calls the action for button in the HUD, such as edits for the particle, toggle gravity, pause time, select
+	 * next/previous particles
+	 * 
+	 * Try catch could be removed if a selected particle feature is improved, and buttons are decoupled. Can
+	 * iterate all buttons and call their action if click is inbound
+	 * 
+	 * @param x The x coordinate of the click action
+	 * @param y The y coordinate of the click action
+	 */
 	public void click(int x, int y) {
 		try {
 			if (x >= this.x + 253 && x <= this.x + 253 + 40 && y > this.y + 24 && y < this.y + 24 + 18) {
@@ -101,6 +137,9 @@ public class ParticleView {
 
 	}
 
+	/**
+	 * Selects the next particle in the list if one is available
+	 */
 	private void selectNext() {//better if statements
 		if (p.size() >= 2) {
 			for (int i = 0; i < p.size(); i++) {
@@ -118,13 +157,15 @@ public class ParticleView {
 				}
 			}
 		} 
-
 		if (p.size() >= 1) {
 			p.get(0).select();
 		}
 
 	}
-
+	
+	/**
+	 * Selects the previous particle in the list if one is available
+	 */
 	private void selectPrev() {//better if statements
 		if (p.size() >= 2) {
 			for (int i = 0; i < p.size(); i++) {
@@ -149,6 +190,12 @@ public class ParticleView {
 
 	}
 
+	/**
+	 * Renders the information of the selected particle.
+	 * 
+	 * Should return if there is not selected particle.
+	 * @param g The Application Graphics object
+	 */
 	private void renderPInfo(Graphics g) {
 		g.drawString("mass: " + df.format(selectedP.getMass()), x +10, y + 80);
 		g.drawString("x: " + df.format(selectedP.getX()), x +10, y + 100);
@@ -176,15 +223,17 @@ public class ParticleView {
 		g.drawRect(x + 145, y + 207, 128, 14);
 	}
 
+	/**
+	 * Renders seconds into Hour:Minute:Seconds
+	 * 
+	 * @param g The Application Graphics object
+	 * @param time The time in seconds to print, converted to Hour:Minute:Seconds
+	 */
 	public void rendertime(Graphics g, int time) {
-		
 		int seconds = (time / 60) % 60;
-		
 		int minutes = (time / 60 / 60) % 60;
-		
 		int hours = (seconds / 60 / 60 / 60) % 60;
-		
-		
+
 		g.setColor(Color.WHITE);
 		g.drawString(hours + ":" + minutes + ":" + seconds, x + 130, y + 650);
 		String string;
@@ -197,7 +246,15 @@ public class ParticleView {
 		g.drawRect(x + 120, y + 658, 65, 16);
 
 	}
-	
+
+	/**
+	 * Renders the Toggle gravity button
+	 * 
+	 * Should be handled in the render() method and pull the grav from the handler object
+	 * 
+	 * @param g The Graphics Object
+	 * @param grav If gravity is enabled
+	 */
 	public void renderGravity(Graphics g, boolean grav) {
 		String string;
 		if (grav) {
@@ -208,7 +265,5 @@ public class ParticleView {
 		g.drawString(string, x + 98, y + 695);
 		g.drawRect(x + 85, y + 681, 125, 16);
 	}
-
-
 
 }

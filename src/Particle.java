@@ -2,11 +2,18 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
 
+/**
+ * Particle object that moves according to particle physics. Collides with other particles and the bottom, left/right
+ * borders. Also is pulled by gravity is it is enabled.
+ * 
+ * Should remove the isSelected field and the logic around it and update it to have Handler have a reference to the 
+ * Selected particle since only 1 can be selected and the selected particle doesn't need to know its selected
+ * @author Vadim
+ *
+ */
 public class Particle {
 	
 	private ArrayList<Force> forces = new ArrayList<>();
-	
-	int time = 0;
 	
 	private double xAccel = 0;
 	private double yAccel = 0;
@@ -20,20 +27,32 @@ public class Particle {
 	private double x;
 	private double y;
 	
-	private double mass = 1;//utilize mass
-	
+	private double mass = 1;
 	private double width = 15;
 	
+	/**
+	 * Remove in future updates
+	 */
 	private boolean isSelected;
-	
-	private boolean showVector;
 	
 	private Color color = Color.BLACK;
 	
+	/**
+	 * Constructor to set only the x and y position. The velocities are initialized to 0.
+	 * @param x the X position
+	 * @param y the Y position
+	 */
 	public Particle(double x, double y) {
 		this(x, y, 0, 0);
 	}
 	
+	/**
+	 * Constructor to set only the x and y position and the x and y velocity.
+	 * @param x the X position
+	 * @param y the Y position
+	 * @param initxVel the X Velocity
+	 * @param intiyVel the Y Velocity
+	 */
 	public Particle(double x, double y, double initxVel, double intiyVel) {
 		this.x = x;
 		this.y = y;
@@ -41,43 +60,38 @@ public class Particle {
 		yVel = intiyVel;
 	}
 	
+	/**
+	 * Moves the particle depending on its velocities which are recalculating based on the forces acting on it (such as 
+	 * gravity). Bounces off Left/Right and bottom border.
+	 */
 	public void tick() {
-		//calculate accelleration from the array of forces
-		
+		//calculate acceleration from the array of forces
 		for (int i = 0; i < forces.size(); i++) {
 			yAccel += forces.get(i).getYMagnitude() / mass;
 			xAccel += forces.get(i).getXMagnitude() / mass;
 		}
-		
-		//System.out.println((int)xAccel + ", " + (int)yAccel);
-		
+				
 		presYAccel = yAccel;
 		presXAccel = xAccel;
 		
 		xVel += xAccel;
 		yVel += yAccel;
-		time++;
 		x += xVel;
 		y += yVel; 
 		
 		if (y > 700) {
 			y = 700;
-			//forceAct(90, (yAccel * 500));
-			//forceAct(360 - Math.atan(yAccel / xAccel) * (180 / Math.PI), Math.sqrt(xAccel * xAccel + yAccel * yAccel) * 100);
 			yVel = - yVel * .9;
-			//yAccel = 0;
 		}
 		
 		if (x > 700) {
 			x = 700;
 			xVel = - xVel * .9;
-			//xAccel = 0;
 		}
 		
 		if (x < 10) {
 			x = 10;
 			xVel = - xVel * .9;
-			//xAccel = 0;
 		}
 		
 		xAccel = 0;
@@ -86,6 +100,11 @@ public class Particle {
 		forces.clear();
 	}
 	
+	/**
+	 * Draws the circle at x, y of filled with the particles color. If the particle is selected, then a red box is
+	 * drawn around the particle, as well as the acceleration vector.
+	 * @param g the Canvas graphics object
+	 */
 	public void render(Graphics g) {
 		//draw force vectors
 		g.setColor(color);
@@ -99,32 +118,42 @@ public class Particle {
 	}
 	
 	/**
-	 * 
-	 * @param dir direction in degrees
-	 * @param force
+	 * Add a force to the particle which will be used in the next tick collection for movement 
+	 * @param dir Direction in degrees.
+	 * @param force Magnitude of the force
 	 */
 	public void forceAct(double dir, double force) {//magnitude
 		//add the forces to the array
 		force /= (60);
 		forces.add(new Force(dir, force));
-		//double xAccel = (force * Math.cos(dir * (Math.PI / 180.0)));
-		//double yAccel = -(force * Math.sin(dir * (Math.PI / 180.0)));
-		
-		//this.xAccel += xAccel;
-		//this.yAccel += yAccel;
-		
-		//xVel += xAccel;   
-		//yVel += yAccel;
 	}
 	
+	/**
+	 * Collides with the Particle with the inputed particle, updates both particle's velocities
+	 * 
+	 * Needs to be updated to take the masses into account
+	 * @param p2 The particle to collide with
+	 */
 	public void collide(Particle p2) {//proper momentum calculation with masses
-//		double new momentum 
 		double newxVel = (xVel + p2.xVel) / 2;
 		double newyVel = (yVel + p2.yVel) / 2;
 		xVel = p2.xVel = newxVel;
 		yVel = p2.yVel = newyVel;
 	}
 	
+	/**
+	 * Used to render the  Particles velocity/acceleration vector when the particle is selected
+	 * @param g the Canvas Graphics object
+	 * @param xVec the X dimension of the vector
+	 * @param yVec the Y dimension of the vector
+	 */
+	private void renderVector(Graphics g, double xVec, double yVec) {
+		g.drawLine((int)(x + (width / 2)), (int)(y + (width / 2)), (int)(x + (width / 2) 
+				+ (xVec * 60)), (int)(y + (width / 2) + (yVec * 60)));
+	}
+	
+	
+	//Getters and Setters-----------------------------------------------------------------------------------------------
 	
 	public double getX() {
 		return x;
@@ -206,14 +235,14 @@ public class Particle {
 		this.color = color;
 	}
 	
-	private void renderVector(Graphics g, double xVec, double yVec) {
-		
-		System.out.println((xVec * 60 + ", " + yVec * 60));
-		
-		g.drawLine((int)(x + (width / 2)), (int)(y + (width / 2)), (int)(x + (width / 2) + (xVec * 60)), (int)(y + (width / 2) + (yVec * 60)));
-	}
+	//End of Getters and Setters----------------------------------------------------------------------------------------
 	
-	private class Force {
+	/**
+	 * Force object class, used for force direction and magnitude and managing force calculations
+	 * @author Vadim
+	 *
+	 */
+	private static class Force {
 		
 		private double dir;
 		private double magnitude;
@@ -223,15 +252,8 @@ public class Particle {
 			this.dir = dir;
 			this.magnitude = magnitude;
 		}
-		
-		public double getDir() {
-			return dir;
-		}
-		
-		public double getMagnitude() {
-			return magnitude;
-		}
-		
+		//Getters and Setters-------------------------------------------------------------------------------------------
+				
 		public double getYMagnitude() {
 			return -(magnitude * Math.sin(dir * (Math.PI / 180.0)));
 
@@ -239,9 +261,7 @@ public class Particle {
 		
 		public double getXMagnitude() {
 			return (magnitude * Math.cos(dir * (Math.PI / 180.0)));
-
 		}
+		//End of Getters and Setters------------------------------------------------------------------------------------
 	}
-	
-
 }
